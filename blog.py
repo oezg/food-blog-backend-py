@@ -31,7 +31,7 @@ def fill_recipes(cur):
     print('Pass the empty recipe name to exit.')
     while recipe_name := input('Recipe name: '):
         recipe_description = input('Recipe description: ')
-        cur.execute(statements.INSERT_RECIPE.format(name=recipe_name, description=recipe_description))
+        cur.execute(statements.INSERT_RECIPE.format(recipe_name, recipe_description))
         recipe_id = cur.lastrowid
 
         meals = cur.execute("SELECT * FROM meals;").fetchall()
@@ -51,13 +51,12 @@ def fill_recipes(cur):
                 print('The measure is not conclusive!')
                 continue
             measure_id = matching_measures[0][0]
-            cur.execute(f"SELECT ingredient_id FROM ingredients WHERE ingredient_name LIKE '%{ingredient}%';")
+            cur.execute(statements.SELECT_INGREDIENT.format(ingredient))
             if len((matching_ingredients := cur.fetchall())) != 1:
                 print('The ingredient is not conclusive!')
                 continue
             ingredient_id = matching_ingredients[0][0]
-            cur.execute(f"INSERT INTO quantity (quantity, measure_id, ingredient_id, recipe_id) "
-                        f"VALUES ({quantity}, {measure_id},{ingredient_id},{recipe_id});")
+            cur.execute(statements.INSERT_QUANTITY.format(quantity, measure_id, ingredient_id, recipe_id))
 
 
 def initialize_database(cur):
@@ -74,24 +73,21 @@ def initialize_database(cur):
             cur.execute(statements.INSERT_DATA.format(table, table[:-1], variable))
 
 
-def search(t, ingredients, cur):
-    cur.execute(f"select recipe_id from serve join meals on serve.meal_id = meals.meal_id where meal_name in ('{t}');")
-    result = [{row[0] for row in cur.fetchall()}]
+def search(meals_text: str, ingredients: list[str], cur: sqlite3.Cursor) -> None:
+    cur.execute(statements.SELECT_RECIPE_MEAL.format(meals_text))
+    recipe_sets = [{row[0] for row in cur.fetchall()}]
     for ingredient in ingredients:
-        cur.execute(f"""
-        select recipe_id from quantity join ingredients on quantity.ingredient_id = ingredients.ingredient_id
-        where ingredient_name = '{ingredient}';
-        """)
-        result.append({row[0] for row in cur.fetchall()})
-    out = set.intersection(*result)
-    if not out:
+        cur.execute(statements.SELECT_RECIPE_INGREDIENT.format(ingredient))
+        recipe_sets.append({row[0] for row in cur.fetchall()})
+    recipes_with_every_ingredient = set.intersection(*recipe_sets)
+    if not recipes_with_every_ingredient:
         print('There are no such recipes in the database.')
     else:
-        z = []
-        for u in out:
-            cur.execute(f"select recipe_name from recipes where recipe_id = {u};")
-            z.append(cur.fetchone()[0])
-        print(f"Recipes selected for you: {', '.join(z)}")
+        selected_recipe_names = []
+        for recipe in recipes_with_every_ingredient:
+            cur.execute(statements.SELECT_RECIPE_NAME.format(recipe))
+            selected_recipe_names.append(cur.fetchone()[0])
+        print(f"Recipes selected for you: {', '.join(selected_recipe_names)}")
 
 
 if __name__ == '__main__':

@@ -60,11 +60,20 @@ data = {
 
 INSERT_DATA = "INSERT INTO {0} ({1}_name) VALUES ('{2}');"
 
-INSERT_RECIPE = """
-INSERT INTO recipes (recipe_name, recipe_description) 
-                                VALUES ('{name}', '{description}');
-"""
+INSERT_RECIPE = "INSERT INTO recipes (recipe_name, recipe_description) VALUES ('{0}', '{1}');"
 
 INSERT_SERVE = "INSERT INTO serve (recipe_id, meal_id) VALUES ({0}, {1});"
 
+INSERT_QUANTITY = "INSERT INTO quantity (quantity, measure_id, ingredient_id, recipe_id) VALUES ({0}, {1},{2},{3});"
+
 SELECT_MEASURE = "SELECT measure_id FROM measures WHERE measure_name LIKE '{}';"
+
+SELECT_INGREDIENT = "SELECT ingredient_id FROM ingredients WHERE ingredient_name LIKE '%{}%';"
+
+SELECT_RECIPE_MEAL = "SELECT recipe_id FROM serve JOIN meals ON serve.meal_id = meals.meal_id WHERE meal_name IN ('{}');"
+
+SELECT_RECIPE_INGREDIENT = """SELECT recipe_id FROM quantity 
+JOIN ingredients ON quantity.ingredient_id = ingredients.ingredient_id 
+WHERE ingredient_name = '{}';"""
+
+SELECT_RECIPE_NAME = "select recipe_name from recipes where recipe_id = {};"
