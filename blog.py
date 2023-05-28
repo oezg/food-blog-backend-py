@@ -1,63 +1,6 @@
 import argparse
 import sqlite3
-
-CREATE_MEALS = """
-CREATE TABLE IF NOT EXISTS meals (
-    meal_id INTEGER PRIMARY KEY,
-    meal_name TEXT UNIQUE NOT NULL 
-);
-"""
-
-CREATE_INGREDIENTS = """
-CREATE TABLE IF NOT EXISTS ingredients (
-    ingredient_id INTEGER PRIMARY KEY,
-    ingredient_name TEXT UNIQUE NOT NULL 
-);
-"""
-
-CREATE_MEASURES = """
-CREATE TABLE IF NOT EXISTS measures (
-    measure_id INTEGER PRIMARY KEY,
-    measure_name TEXT UNIQUE 
-);
-"""
-
-CREATE_RECIPES = """
-CREATE TABLE IF NOT EXISTS recipes (
-    recipe_id INTEGER PRIMARY KEY,
-    recipe_name TEXT NOT NULL,
-    recipe_description TEXT 
-);
-"""
-
-CREATE_SERVE = """
-CREATE TABLE IF NOT EXISTS serve (
-    serve_id INTEGER PRIMARY KEY,
-    recipe_id INTEGER NOT NULL,
-    meal_id INTEGER NOT NULL,
-    FOREIGN KEY (recipe_id) REFERENCES recipes (recipe_id),
-    FOREIGN KEY (meal_id) REFERENCES meals (meal_id)
-);
-"""
-
-CREATE_QUANTITY = """
-CREATE TABLE IF NOT EXISTS quantity (
-    quantity_id INTEGER PRIMARY KEY,
-    quantity INTEGER NOT NULL,
-    measure_id INTEGER NOT NULL,
-    ingredient_id INTEGER NOT NULL,
-    recipe_id INTEGER NOT NULL,
-    FOREIGN KEY (measure_id) REFERENCES measures (measure_id),
-    FOREIGN KEY (ingredient_id) REFERENCES ingredients (ingredient_id),
-    FOREIGN KEY (recipe_id) REFERENCES recipes (recipe_id)
-);
-"""
-
-data = {
-    "meals": ("breakfast", "brunch", "lunch", "supper"),
-    "ingredients": ("milk", "cacao", "strawberry", "blueberry", "blackberry", "sugar"),
-    "measures": ("ml", "g", "l", "cup", "tbsp", "tsp", "dsp", "")
-}
+import statements
 
 
 def main():
@@ -71,9 +14,9 @@ def main():
     cur = conn.cursor()
 
     if args.ingredients or args.meals:
-        t = args.meals.replace(",", "', '")
-        ingreds = args.ingredients.split(",")
-        search(t, ingreds, cur)
+        meals_text = args.meals.replace(",", "', '")
+        ingredients_list = args.ingredients.split(",")
+        search(meals_text, ingredients_list, cur)
     else:
         initialize_database(cur)
         conn.commit()
@@ -123,26 +66,26 @@ def fill_recipes(cur):
 
 
 def initialize_database(cur):
-    cur.execute("PRAGMA foreign_keys = ON;")
-    cur.execute(CREATE_MEALS)
-    cur.execute(CREATE_INGREDIENTS)
-    cur.execute(CREATE_MEASURES)
-    cur.execute(CREATE_RECIPES)
-    cur.execute(CREATE_SERVE)
-    cur.execute(CREATE_QUANTITY)
+    cur.execute(statements.PRAGMA_FOREIGN_KEYS)
+    cur.execute(statements.CREATE_MEALS)
+    cur.execute(statements.CREATE_INGREDIENTS)
+    cur.execute(statements.CREATE_MEASURES)
+    cur.execute(statements.CREATE_RECIPES)
+    cur.execute(statements.CREATE_SERVE)
+    cur.execute(statements.CREATE_QUANTITY)
 
-    for table, variables in data.items():
+    for table, variables in statements.data.items():
         for variable in variables:
-            cur.execute(f"INSERT INTO {table} ({table[:-1]}_name) VALUES ('{variable}');")
+            cur.execute(statements.INSERT_DATA.format(table, table[:-1], variable))
 
 
-def search(t, ingreds, cur):
+def search(t, ingredients, cur):
     cur.execute(f"select recipe_id from serve join meals on serve.meal_id = meals.meal_id where meal_name in ('{t}');")
     result = [{row[0] for row in cur.fetchall()}]
-    for ingred in ingreds:
+    for ingredient in ingredients:
         cur.execute(f"""
         select recipe_id from quantity join ingredients on quantity.ingredient_id = ingredients.ingredient_id
-        where ingredient_name = '{ingred}';
+        where ingredient_name = '{ingredient}';
         """)
         result.append({row[0] for row in cur.fetchall()})
     out = set.intersection(*result)
