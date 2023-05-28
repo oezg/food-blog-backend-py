@@ -3,7 +3,7 @@ import sqlite3
 import statements
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument('db_name')
     parser.add_argument('--ingredients', dest='ingredients')
@@ -27,7 +27,7 @@ def main():
     conn.close()
 
 
-def fill_recipes(cur):
+def fill_recipes(cur: sqlite3.Cursor) -> None:
     print('Pass the empty recipe name to exit.')
     while recipe_name := input('Recipe name: '):
         recipe_description = input('Recipe description: ')
@@ -59,7 +59,7 @@ def fill_recipes(cur):
             cur.execute(statements.INSERT_QUANTITY.format(quantity, measure_id, ingredient_id, recipe_id))
 
 
-def initialize_database(cur):
+def initialize_database(cur: sqlite3.Cursor) -> None:
     cur.execute(statements.PRAGMA_FOREIGN_KEYS)
     cur.execute(statements.CREATE_MEALS)
     cur.execute(statements.CREATE_INGREDIENTS)
