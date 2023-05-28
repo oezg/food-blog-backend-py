@@ -59,3 +59,12 @@ data = {
 }
 
 INSERT_DATA = "INSERT INTO {0} ({1}_name) VALUES ('{2}');"
+
+INSERT_RECIPE = """
+INSERT INTO recipes (recipe_name, recipe_description) 
+                                VALUES ('{name}', '{description}');
+"""
+
+INSERT_SERVE = "INSERT INTO serve (recipe_id, meal_id) VALUES ({0}, {1});"
+
+SELECT_MEASURE = "SELECT measure_id FROM measures WHERE measure_name LIKE '{}';"
